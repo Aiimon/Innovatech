@@ -55,7 +55,7 @@ jobs:
 
       - name: Compilar y Testear Spring Boot (Ventas)
         run: |
-          cd back-Ventas_SpringBoot/Springboot-API-REST
+          cd back-ventas
           # mvn clean test -> Descoméntalo si tienes pruebas unitarias escritas
           mvn clean compile
 
@@ -78,5 +78,5 @@ jobs:
 
       - name: Compilar y Testear Spring Boot (Despachos)
         run: |
-          cd back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
+          cd back-despachos
           mvn clean compile
