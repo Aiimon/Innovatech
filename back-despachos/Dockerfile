@@ -8,20 +8,20 @@ COPY pom.xml .
 # 2. Copiamos el código fuente
 COPY src ./src
 
-# 3. COMPILACIÓN: Usamos 'mvn' directamente (sin el ./)
+# 3. COMPILACIÓN: Usamos 'mvn' directamente
 RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:21-jdk AS runner
 
 WORKDIR /app
 
-# Crear usuario por seguridad (Mejor práctica DevOps)
 RUN useradd -m duocuser
 USER duocuser
 
 # Copiamos el artefacto generado en la etapa anterior
 COPY --from=builder /build/target/*.jar app.jar
 
-EXPOSE 8080
+# Puerto específico de Despachos según tu docker-compose
+EXPOSE 8081
 
-ENTRYPOINT [ "java", "-jar", "app.jar" ]
+ENTRYPOINT [ "java", "-Dspring.datasource.url=${SPRING_DATASOURCE_URL}", "-Dspring.datasource.username=${SPRING_DATASOURCE_USERNAME}", "-Dspring.datasource.password=${SPRING_DATASOURCE_PASSWORD}", "-jar", "app.jar" ]

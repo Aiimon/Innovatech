@@ -37,30 +37,36 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           docker build --platform linux/amd64 \
+          --build-arg SPRING_DATASOURCE_URL=jdbc:mysql://127.0.0.1:3306/innovatech_db \
+          --build-arg SPRING_DATASOURCE_USERNAME=root \
+          --build-arg SPRING_DATASOURCE_PASSWORD=root_password \
           -t $ECR_REGISTRY/eva-2-back-ventas:latest \
           ./back-ventas
-      
+          
       - name: Push Backend ventas
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           docker push $ECR_REGISTRY/eva-2-back-ventas:latest
 
-#----------------------------------------------------
+    #----------------------------------------------------
 
       - name: Build Backend despacho
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        run: |
-          docker build --platform linux/amd64 \
-          -t $ECR_REGISTRY/eva-2-back-despachos:latest \
-          ./back-despachos
+          run: |
+            docker build --platform linux/amd64 \
+            --build-arg SPRING_DATASOURCE_URL=jdbc:mysql://127.0.0.1:3306/innovatech_db \
+            --build-arg SPRING_DATASOURCE_USERNAME=root \
+            --build-arg SPRING_DATASOURCE_PASSWORD=root_password \
+            -t $ECR_REGISTRY/eva-2-back-despachos:latest \
+            ./back-despachos
 
       - name: Push Backend despacho
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        run: |
-          docker push $ECR_REGISTRY/eva-2-back-despachos:latest
+          run: |
+            docker push $ECR_REGISTRY/eva-2-back-despachos:latest
 
 #----------------------------------------------------
 
