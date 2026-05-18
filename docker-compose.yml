@@ -1,0 +1,68 @@
+services:
+  mysql:
+    image: mysql:8
+    container_name: innovatech-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - innovatech-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Microservicio de Ventas
+  back-ventas:
+    build: ./back-ventas
+    image: innovatech-back-ventas:1.0
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - innovatech-net
+
+  # Microservicio de Despachos
+  back-despachos:
+    build: ./back-despachos
+    image: innovatech-back-despachos:1.0
+    ports:
+      - "8081:8081" # Usamos el 8081 para no chocar con Ventas
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - innovatech-net
+
+  frontend:
+    build: ./front_despacho
+    image: innovatech-frontend:1.0
+    ports:
+      - "80:80" 
+    depends_on:
+      - back-ventas
+      - back-despachos
+    networks:
+      - innovatech-net
+
+volumes:
+  mysql_data:
+
+networks:
+  innovatech-net:
+
