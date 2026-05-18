@@ -23,7 +23,6 @@ jobs:
           uses: actions/setup-node@v4
           with:
             node-version: 20
-            # Eliminamos las líneas de caché que estaban dando problemas
 
         - name: Instalar Dependencias
           run: |
