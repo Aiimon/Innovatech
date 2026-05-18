@@ -7,15 +7,15 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECS_CLUSTER: eva-2-cluster      # Corregido según tu main.tf (${var.project_name}-cluster)
-  ECS_SERVICE: app-service        # Tu servicio único que agrupa los 3 contenedores
+  ECS_CLUSTER: eva-2-cluster
+  ECS_SERVICE: app-service
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4 # Actualizado a la v4 que es más rápida y segura
+        uses: actions/checkout@v4
 
       - name: Configurar credenciales de AWS
         uses: aws-actions/configure-aws-credentials@v4
@@ -25,12 +25,9 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # Capturamos el login de ECR y obtenemos el ID de cuenta de forma automática
       - name: Login en ECR de AWS
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-
-#----------------------------------------------------
 
       - name: Build Backend de ventas
         env:
@@ -49,26 +46,22 @@ jobs:
         run: |
           docker push $ECR_REGISTRY/eva-2-back-ventas:latest
 
-    #----------------------------------------------------
-
       - name: Build Backend despacho
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          run: |
-            docker build --platform linux/amd64 \
-            --build-arg SPRING_DATASOURCE_URL=jdbc:mysql://127.0.0.1:3306/innovatech_db \
-            --build-arg SPRING_DATASOURCE_USERNAME=root \
-            --build-arg SPRING_DATASOURCE_PASSWORD=root_password \
-            -t $ECR_REGISTRY/eva-2-back-despachos:latest \
-            ./back-despachos
+        run: |
+          docker build --platform linux/amd64 \
+          --build-arg SPRING_DATASOURCE_URL=jdbc:mysql://127.0.0.1:3306/innovatech_db \
+          --build-arg SPRING_DATASOURCE_USERNAME=root \
+          --build-arg SPRING_DATASOURCE_PASSWORD=root_password \
+          -t $ECR_REGISTRY/eva-2-back-despachos:latest \
+          ./back-despachos
 
       - name: Push Backend despacho
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          run: |
-            docker push $ECR_REGISTRY/eva-2-back-despachos:latest
-
-#----------------------------------------------------
+        run: |
+          docker push $ECR_REGISTRY/eva-2-back-despachos:latest
 
       - name: Build frontend
         env:
@@ -84,11 +77,6 @@ jobs:
         run: |
           docker push $ECR_REGISTRY/eva-2-frontend:latest
 
-#----------------------------------------------------
-      
-      # ALINEADO CON TU MODELO DE ECS TASK:
-      # Como los 3 contenedores viven en el mismo servicio unificado, 
-      # un solo comando redespliega la app completa limpiamente sin errores.
       - name: Redesplegar Aplicación Unificada en ECS
         run: |
           aws ecs update-service \
