@@ -1,67 +1,92 @@
-name: Despliegue en AWS
+name: Deploy innovatech en la nube
 
 on:
   push:
     branches:
-      - main 
+      - main
 
 env:
   AWS_REGION: us-east-1
-  CLUSTER: devops-u2-cluster
-  SERVICE: app
+  ECS_CLUSTER: eva-2-cluster      # Corregido según tu main.tf (${var.project_name}-cluster)
+  ECS_SERVICE: app-service        # Tu servicio único que agrupa los 3 contenedores
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout del código
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4 # Actualizado a la v4 que es más rápida y segura
 
-      - name: Configurar las credenciales de AWS
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: Configurar credenciales de AWS
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} # Requerido si usas AWS Academy
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login en ECR
+      # Capturamos el login de ECR y obtenemos el ID de cuenta de forma automática
+      - name: Login en ECR de AWS
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Configurar IP de Backend en el Front
-        run: |
-          echo "VITE_API_VENTAS_URL=http://${{ secrets.AWS_EC2_IP }}:8080" > ./front_despacho/.env
-          echo "VITE_API_DESPACHOS_URL=http://${{ secrets.AWS_EC2_IP }}:8081" >> ./front_despacho/.env
+#----------------------------------------------------
 
-
-      # BUILD Y PUSH - BACKEND VENTAS
-      - name: Build y Push imagen backend ventas
+      - name: Build Backend de ventas
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           docker build --platform linux/amd64 \
-          -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/devops-u2-ventas:latest \
+          -t $ECR_REGISTRY/eva-2-back-ventas:latest \
           ./back-Ventas_SpringBoot/Springboot-API-REST
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/devops-u2-ventas:latest
+      
+      - name: Push Backend ventas
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker push $ECR_REGISTRY/eva-2-back-ventas:latest
 
-      # BUILD Y PUSH - BACKEND DESPACHOS
-      - name: Build y Push imagen backend despachos
+#----------------------------------------------------
+
+      - name: Build Backend despacho
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           docker build --platform linux/amd64 \
-          -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/devops-u2-despachos:latest \
+          -t $ECR_REGISTRY/eva-2-back-despachos:latest \
           ./back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/devops-u2-despachos:latest
 
-      # BUILD Y PUSH - FRONTEND
-      - name: Build y Push imagen frontend
+      - name: Push Backend despacho
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker push $ECR_REGISTRY/eva-2-back-despachos:latest
+
+#----------------------------------------------------
+
+      - name: Build frontend
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           docker build --platform linux/amd64 \
-          -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/devops-u2-frontend:latest \
+          -t $ECR_REGISTRY/eva-2-frontend:latest \
           ./front_despacho
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/devops-u2-frontend:latest
 
-      - name: Forzar un redespliegue en ECS
+      - name: Push frontend
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker push $ECR_REGISTRY/eva-2-frontend:latest
+
+#----------------------------------------------------
+      
+      # ALINEADO CON TU MODELO DE ECS TASK:
+      # Como los 3 contenedores viven en el mismo servicio unificado, 
+      # un solo comando redespliega la app completa limpiamente sin errores.
+      - name: Redesplegar Aplicación Unificada en ECS
         run: |
           aws ecs update-service \
-          --cluster ${{ env.CLUSTER }} \
-          --service ${{ env.SERVICE }} \
-          --force-new-deployment
+          --cluster ${{ env.ECS_CLUSTER }} \
+          --service ${{ env.ECS_SERVICE }} \
+          --force-new-deployment \
+          --region ${{ env.AWS_REGION }}

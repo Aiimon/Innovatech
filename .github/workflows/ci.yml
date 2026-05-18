@@ -1,0 +1,82 @@
+name: Integracion Continua (CI) - Innovatech
+
+on:
+  push:
+    branches-ignore:
+      - main # No corre en main porque ahí se encarga el CD
+  pull_request:
+    branches:
+      - main # Valida los cambios antes de que se mezclen con la rama principal
+
+jobs:
+  # ====================================================
+  # JOB 1: VALIDAR EL FRONTEND (REACT / VITE)
+  # ====================================================
+  validate-frontend:
+    name: Validar Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar Código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: './front_despacho/package-lock.json'
+
+      - name: Instalar Dependencias
+        run: |
+          cd front_despacho
+          npm ci
+
+      - name: Validar Compilación (Build Test)
+        run: |
+          cd front_despacho
+          npm run build
+
+  # ====================================================
+  # JOB 2: VALIDAR BACKEND DE VENTAS (SPRING BOOT)
+  # ====================================================
+  validate-back-ventas:
+    name: Validar Backend Ventas
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar Código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java JDK 17 (o la versión que uses)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Compilar y Testear Spring Boot (Ventas)
+        run: |
+          cd back-Ventas_SpringBoot/Springboot-API-REST
+          # mvn clean test -> Descoméntalo si tienes pruebas unitarias escritas
+          mvn clean compile
+
+  # ====================================================
+  # JOB 3: VALIDAR BACKEND DE DESPACHOS (SPRING BOOT)
+  # ====================================================
+  validate-back-despachos:
+    name: Validar Backend Despachos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar Código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Compilar y Testear Spring Boot (Despachos)
+        run: |
+          cd back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
+          mvn clean compile
