@@ -38,7 +38,7 @@ jobs:
         run: |
           docker build --platform linux/amd64 \
           -t $ECR_REGISTRY/eva-2-back-ventas:latest \
-          ./back-Ventas_SpringBoot/Springboot-API-REST
+          ./back-ventas
       
       - name: Push Backend ventas
         env:
@@ -54,7 +54,7 @@ jobs:
         run: |
           docker build --platform linux/amd64 \
           -t $ECR_REGISTRY/eva-2-back-despachos:latest \
-          ./back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
+          ./back-despachos
 
       - name: Push Backend despacho
         env:
