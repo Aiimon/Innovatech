@@ -11,6 +11,7 @@ Este proyecto automatiza por completo el ciclo de vida de la aplicación **Innov
 ---
 
 ## 🧭 Estructura del Proyecto
+```
 innovatech-project/
 ├── .github/
 │   └── workflows/
@@ -26,6 +27,8 @@ innovatech-project/
 │   └── Dockerfile
 ├── docker-compose.yml         # Orquestación para Entorno de Desarrollo Local
 └── README.md
+```
+
 ## 🚀 Requisitos de Ejecución
 
 * **Entorno Local:** Docker Desktop & Docker Compose para ejecución local en el computador.
